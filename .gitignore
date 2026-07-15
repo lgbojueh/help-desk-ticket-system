@@ -6,3 +6,4 @@ helpdesk.db
 *.db
 *.db-shm
 *.db-wal
+helpdesk.db*
