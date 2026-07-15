@@ -1,3 +1,8 @@
 node_modules/
 helpdesk.db
 .env
+
+# Local database files
+*.db
+*.db-shm
+*.db-wal

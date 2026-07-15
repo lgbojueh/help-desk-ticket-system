@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help Desk Ticket System</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+.nav{background:#1a1a1a;color:#fff;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+.nav h1{font-size:1.3rem}
+.nav .user-info{font-size:0.9rem;color:#aaa}
+.nav .user-info span{color:#6c63ff;font-weight:700}
+.nav button{background:#6c63ff;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600}
+.container{max-width:900px;margin:32px auto;padding:0 20px}
+.card{background:#fff;border-radius:16px;padding:28px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.card h2{margin-bottom:16px;font-size:1.3rem}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-weight:600;margin-bottom:6px;font-size:0.88rem;color:#555}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:0.95rem;font-family:inherit;transition:border-color 0.2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#6c63ff}
+.form-group textarea{min-height:80px;resize:vertical}
+.btn{padding:12px 24px;border-radius:10px;border:none;font-weight:700;font-size:0.92rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:#6c63ff;color:#fff;box-shadow:0 4px 16px rgba(108,99,255,0.3)}
+.btn-danger{background:#ff4757;color:#fff}
+.btn-sm{padding:6px 14px;font-size:0.82rem;border-radius:8px}
+.btn-outline{background:transparent;border:2px solid #ddd;color:#333}
+.btn-outline:hover{border-color:#6c63ff;color:#6c63ff}
+.row{display:flex;gap:12px}
+.row .form-group{flex:1}
+.ticket{border:1px solid #e8e8e4;border-radius:14px;padding:20px;margin-bottom:14px;transition:border-color 0.2s,box-shadow 0.2s}
+.ticket:hover{border-color:#6c63ff;box-shadow:0 4px 20px rgba(108,99,255,0.08)}
+.ticket-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:8px}
+.ticket-title{font-weight:700;font-size:1.05rem}
+.ticket-id{color:#999;font-size:0.82rem}
+.ticket-desc{color:#666;font-size:0.9rem;margin-bottom:12px;line-height:1.6}
+.ticket-meta{display:flex;gap:8px;flex-wrap:wrap}
+.badge{padding:4px 10px;border-radius:999px;font-size:0.75rem;font-weight:700}
+.badge-open{background:#e8f5e9;color:#2e7d32}
+.badge-in-progress{background:#fff3e0;color:#e65100}
+.badge-resolved{background:#e3f2fd;color:#1565c0}
+.badge-closed{background:#f5f5f5;color:#666}
+.badge-low{background:#e8f5e9;color:#2e7d32}
+.badge-medium{background:#fff3e0;color:#e65100}
+.badge-high{background:#fce4ec;color:#c62828}
+.badge-critical{background:#c62828;color:#fff}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat{background:#fff;border-radius:14px;padding:20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.stat .number{font-size:2rem;font-weight:800;color:#6c63ff}
+.stat .label{font-size:0.82rem;color:#888;margin-top:4px}
+.hidden{display:none}
+.tabs{display:flex;gap:8px;margin-bottom:20px}
+.tab{padding:10px 20px;border-radius:10px;border:2px solid #e0e0e0;background:#fff;cursor:pointer;font-weight:600;font-size:0.88rem;transition:all 0.2s}
+.tab.active{background:#6c63ff;color:#fff;border-color:#6c63ff}
+.tab:hover:not(.active){border-color:#6c63ff;color:#6c63ff}
+.comments{margin-top:16px;border-top:1px solid #eee;padding-top:14px}
+.comment{background:#f8f8f6;border-radius:10px;padding:12px;margin-bottom:8px}
+.comment-author{font-weight:700;font-size:0.85rem;color:#6c63ff}
+.comment-text{font-size:0.9rem;color:#555;margin-top:4px}
+.comment-time{font-size:0.75rem;color:#aaa;margin-top:4px}
+.alert{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-weight:600;font-size:0.9rem}
+.alert-error{background:#fce4ec;color:#c62828}
+.alert-success{background:#e8f5e9;color:#2e7d32}
+.empty{text-align:center;padding:40px;color:#aaa}
+.empty p{font-size:1.1rem}
+@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}.row{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <h1>🎫 Help Desk</h1>
+  <div class="user-info" id="userInfo"></div>
+</div>
+
+<div class="container">
+  <!-- AUTH SCREEN -->
+  <div id="authScreen">
+    <div class="card" style="max-width:420px;margin:60px auto">
+      <h2 id="authTitle">Login</h2>
+      <div id="authAlert"></div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="authUsername" placeholder="Enter username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="Enter password">
+      </div>
+      <div class="form-group hidden" id="emailGroup">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="Enter email">
+      </div>
+      <div class="form-group hidden" id="roleGroup">
+        <label>Role</label>
+        <select id="authRole"><option value="user">User</option><option value="agent">Agent</option><option value="admin">Admin</option></select>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="handleAuth()" id="authBtn">Login</button>
+      <p style="text-align:center;margin-top:16px;color:#888;font-size:0.9rem">
+        <span id="authToggleText">Don't have an account?</span>
+        <a href="#" onclick="toggleAuthMode()" style="color:#6c63ff;font-weight:700" id="authToggleLink">Register</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboardScreen" class="hidden">
+    <div class="stats" id="statsGrid"></div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="showTab('all')">All Tickets</div>
+      <div class="tab" onclick="showTab('open')">Open</div>
+      <div class="tab" onclick="showTab('in-progress')">In Progress</div>
+      <div class="tab" onclick="showTab('resolved')">Resolved</div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2>Tickets</h2>
+        <button class="btn btn-primary btn-sm" onclick="showCreateTicket()">+ New Ticket</button>
+      </div>
+      <div id="ticketList"></div>
+    </div>
+  </div>
+
+  <!-- CREATE TICKET -->
+  <div id="createScreen" class="hidden">
+    <div class="card" style="max-width:600px">
+      <h2>Create New Ticket</h2>
+      <div id="createAlert"></div>
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="ticketTitle" placeholder="Brief description of the issue">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="ticketDesc" placeholder="Detailed description..."></textarea>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="ticketPriority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="ticketCategory"><option value="general">General</option><option value="hardware">Hardware</option><option value="software">Software</option><option value="network">Network</option><option value="security">Security</option><option value="access">Access</option></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="createTicket()">Submit Ticket</button>
+        <button class="btn btn-outline" onclick="showDashboard()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKET DETAIL -->
+  <div id="detailScreen" class="hidden">
+    <div class="card" style="max-width:700px">
+      <button class="btn btn-outline btn-sm" onclick="showDashboard()" style="margin-bottom:16px">← Back to Tickets</button>
+      <div id="ticketDetail"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let token = localStorage.getItem('token');
+let user = JSON.parse(localStorage.getItem('user') || 'null');
+let isRegister = false;
+let currentTab = 'all';
+
+if (token && user) showDashboard();
+
+function toggleAuthMode() {
+  isRegister = !isRegister;
+  document.getElementById('authTitle').textContent = isRegister ? 'Register' : 'Login';
+  document.getElementById('authBtn').textContent = isRegister ? 'Register' : 'Login';
+  document.getElementById('emailGroup').classList.toggle('hidden', !isRegister);
+  document.getElementById('roleGroup').classList.toggle('hidden', !isRegister);
+  document.getElementById('authToggleText').textContent = isRegister ? 'Already have an account?' : "Don't have an account?";
+  document.getElementById('authToggleLink').textContent = isRegister ? 'Login' : 'Register';
+  document.getElementById('authAlert').innerHTML = '';
+}
+
+async function handleAuth() {
+  const username = document.getElementById('authUsername').value;
+  const password = document.getElementById('authPassword').value;
+  const email = document.getElementById('authEmail').value;
+  const role = document.getElementById('authRole').value;
+  const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
+  const body = isRegister ? { username, email, password, role } : { username, password };
+  try {
+    const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('authAlert').innerHTML = `<div class="alert alert-error">${data.error}</div>`; return; }
+    token = data.token; user = data.user;
+    localStorage.setItem('token', token); localStorage.setItem('user', JSON.stringify(user));
+    showDashboard();
+  } catch (e) { document.getElementById('authAlert').innerHTML = `<div class="alert alert-error">Connection error</div>`; }
+}
+
+function logout() {
+  token = null; user = null;
+  localStorage.removeItem('token'); localStorage.removeItem('user');
+  document.getElementById('dashboardScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('userInfo').innerHTML = '';
+}
+
+async function showDashboard() {
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('createScreen').classList.add('hidden');
+  document.getElementById('detailScreen').classList.add('hidden');
+  document.getElementById('dashboardScreen').classList.remove('hidden');
+  document.getElementById('userInfo').innerHTML = `Logged in as <span>${user.username}</span> (${user.role}) <button onclick="logout()" style="margin-left:12px;background:#333;padding:6px 12px;border-radius:6px;border:none;color:#fff;cursor:pointer;font-size:0.8rem">Logout</button>`;
+  await loadStats();
+  await loadTickets();
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch('/api/dashboard/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (res.ok) {
+      const d = await res.json();
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="stat"><div class="number">${d.total}</div><div class="label">Total</div></div>
+        <div class="stat"><div class="number">${d.open}</div><div class="label">Open</div></div>
+        <div class="stat"><div class="number">${d.in_progress}</div><div class="label">In Progress</div></div>
+        <div class="stat"><div class="number">${d.resolved}</div><div class="label">Resolved</div></div>`;
+    }
+  } catch (e) {}
+}
+
+function showTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  loadTickets();
+}
+
+async function loadTickets() {
+  let url = '/api/tickets';
+  if (currentTab !== 'all') url += '?status=' + currentTab;
+  try {
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await res.json();
+    if (data.tickets.length === 0) {
+      document.getElementById('ticketList').innerHTML = '<div class="empty"><p>No tickets yet. Create one!</p></div>';
+      return;
+    }
+    document.getElementById('ticketList').innerHTML = data.tickets.map(t => `
+      <div class="ticket" onclick="viewTicket(${t.id})" style="cursor:pointer">
+        <div class="ticket-header">
+          <div class="ticket-title">${t.title}</div>
+          <div class="ticket-id">#${t.id}</div>
+        </div>
+        <div class="ticket-desc">${t.description.substring(0, 120)}${t.description.length > 120 ? '...' : ''}</div>
+        <div class="ticket-meta">
+          <span class="badge badge-${t.status}">${t.status}</span>
+          <span class="badge badge-${t.priority}">${t.priority}</span>
+          <span class="badge" style="background:#f0eeff;color:#6c63ff">${t.category}</span>
+          <span style="font-size:0.8rem;color:#aaa;margin-left:auto">${t.created_by_name || 'Unknown'} · ${new Date(t.created_at).toLocaleDateString()}</span>
+        </div>
+      </div>`).join('');
+  } catch (e) { document.getElementById('ticketList').innerHTML = '<div class="empty"><p>Error loading tickets</p></div>'; }
+}
+
+function showCreateTicket() {
+  document.getElementById('dashboardScreen').classList.add('hidden');
+  document.getElementById('createScreen').classList.remove('hidden');
+  document.getElementById('ticketTitle').value = '';
+  document.getElementById('ticketDesc').value = '';
+  document.getElementById('createAlert').innerHTML = '';
+}
+
+async function createTicket() {
+  const title = document.getElementById('ticketTitle').value;
+  const description = document.getElementById('ticketDesc').value;
+  const priority = document.getElementById('ticketPriority').value;
+  const category = document.getElementById('ticketCategory').value;
+  if (!title || !description) { document.getElementById('createAlert').innerHTML = '<div class="alert alert-error">Title and description required</div>'; return; }
+  try {
+    const res = await fetch('/api/tickets', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ title, description, priority, category }) });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('createAlert').innerHTML = `<div class="alert alert-error">${data.error}</div>`; return; }
+    showDashboard();
+  } catch (e) { document.getElementById('createAlert').innerHTML = '<div class="alert alert-error">Error creating ticket</div>'; }
+}
+
+async function viewTicket(id) {
+  document.getElementById('dashboardScreen').classList.add('hidden');
+  document.getElementById('createScreen').classList.add('hidden');
+  document.getElementById('detailScreen').classList.remove('hidden');
+  try {
+    const res = await fetch('/api/tickets/' + id, { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await res.json();
+    const t = data.ticket;
+    const statusOptions = ['open','in-progress','resolved','closed'].map(s => `<option value="${s}" ${t.status===s?'selected':''}>${s}</option>`).join('');
+    document.getElementById('ticketDetail').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px">
+        <h2>${t.title}</h2><span class="ticket-id">#${t.id}</span>
+      </div>
+      <div class="ticket-meta" style="margin-bottom:16px">
+        <span class="badge badge-${t.status}">${t.status}</span>
+        <span class="badge badge-${t.priority}">${t.priority}</span>
+        <span class="badge" style="background:#f0eeff;color:#6c63ff">${t.category}</span>
+      </div>
+      <p style="color:#555;line-height:1.7;margin-bottom:20px">${t.description}</p>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px">
+        <label style="font-weight:600;font-size:0.88rem">Update Status:</label>
+        <select id="statusSelect" style="padding:8px 12px;border:2px solid #e0e0e0;border-radius:8px">${statusOptions}</select>
+        <button class="btn btn-primary btn-sm" onclick="updateStatus(${t.id})">Update</button>
+      </div>
+      <div class="comments">
+        <h3 style="margin-bottom:12px;font-size:1rem">Comments (${data.comments.length})</h3>
+        ${data.comments.map(c => `<div class="comment"><div class="comment-author">${c.username}</div><div class="comment-text">${c.comment}</div><div class="comment-time">${new Date(c.created_at).toLocaleString()}</div></div>`).join('')}
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input type="text" id="commentInput" placeholder="Add a comment..." style="flex:1;padding:10px 14px;border:2px solid #e0e0e0;border-radius:10px">
+          <button class="btn btn-primary btn-sm" onclick="addComment(${t.id})">Send</button>
+        </div>
+      </div>`;
+  } catch (e) { document.getElementById('ticketDetail').innerHTML = '<p>Error loading ticket</p>'; }
+}
+
+async function updateStatus(id) {
+  const status = document.getElementById('statusSelect').value;
+  await fetch('/api/tickets/' + id + '/status', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ status }) });
+  viewTicket(id);
+}
+
+async function addComment(id) {
+  const comment = document.getElementById('commentInput').value;
+  if (!comment) return;
+  await fetch('/api/tickets/' + id + '/comments', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ comment }) });
+  viewTicket(id);
+}
+</script>
+</body>
+</html>
